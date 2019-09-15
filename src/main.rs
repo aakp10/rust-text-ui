@@ -15,8 +15,19 @@ pub extern "C" fn _start() -> ! {
 
     //https://wiki.osdev.org/Text_UI
     let greeting = b"Text UI";
-    //let vga_buffer_ptr: &mut [u8];
+    //version 1
     unsafe {
+        let vga_buffer_ptr = (0xB8000 as *mut u8);
+
+        for (index, byte) in greeting.iter().enumerate() { 
+            *vga_buffer_ptr.offset(index as isize *2) = *byte;
+            //foreground color
+            *vga_buffer_ptr.offset(index as isize *2 + 1 ) = 0x0;
+        }
+    }
+
+    // INDEXING RAW POINTERS ISNT ALLOWED
+    /*unsafe {
         let vga_buffer_ptr = &mut (*(0xB8000 as *mut &mut[u8]));
 
         for (index, byte) in greeting.iter().enumerate() { 
@@ -24,6 +35,6 @@ pub extern "C" fn _start() -> ! {
             //foreground color
             vga_buffer_ptr[index*2 + 1] = 0x0e;
         }
-    }
+    }*/
     loop {}
 }
