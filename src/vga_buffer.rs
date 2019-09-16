@@ -1,3 +1,4 @@
+//https://wiki.osdev.org/Text_UI
 #[allow(dead_code)]
 
 #[derive(Copy, Clone)]
@@ -15,7 +16,7 @@ pub struct VGA_color_scheme(u8);
 
 impl VGA_color_scheme {
     //new function
-    fn new(bg: Colors, fg: Colors) -> VGA_color_scheme {
+    pub fn new(bg: Colors, fg: Colors) -> VGA_color_scheme {
         VGA_color_scheme ((bg as u8) << 4 | (fg as u8))
     }
 }
@@ -23,13 +24,13 @@ impl VGA_color_scheme {
 #[derive(Copy, Clone)]
 // screen character
 #[repr(C)]
-struct Screen_char {
+pub struct Screen_char {
     data: u8,
     color: VGA_color_scheme
 }
 
 impl Screen_char {
-    fn new(data: u8, color: VGA_color_scheme) -> Screen_char {
+    pub fn new(data: u8, color: VGA_color_scheme) -> Screen_char {
         Screen_char {
             data,
             color,
@@ -37,15 +38,19 @@ impl Screen_char {
     }
 }
 
-const MAX_ROW: usize = 25;
-const MAX_COL: usize = 80;
+pub const MAX_ROW: usize = 25;
+pub const MAX_COL: usize = 80;
 // buffer 25 * 80 of [Screen_chars]
-//#[repr(transparent)]
-struct VGA_buffer {
+#[repr(transparent)]
+pub struct buffer_memory{
+    chars: [[Screen_char; MAX_COL]; MAX_ROW],
+}
+
+pub struct VGA_buffer {
     current_row: usize,
     current_col: usize,
     color: VGA_color_scheme,
-    buffer: [[Screen_char; MAX_COL]; MAX_ROW]
+    buffer: &'static mut buffer_memory,
 }
 
 impl VGA_buffer {
@@ -53,15 +58,11 @@ impl VGA_buffer {
         match character {
             b'\n' => self.insert_new_line(),
             0x20..=0x7e => { //valid ascii character
-                self.buffer[self.current_row][self.current_col] = Screen_char::new(character, self.color);
+                self.buffer.chars[self.current_row][self.current_col] = Screen_char::new(character, self.color);
                 self.update_cursor();
             }
             _ => {
-                let vga_char = Screen_char {
-                    data: character,
-                    color: self.color
-                };
-                self.buffer[self.current_row][self.current_col] = Screen_char::new(0xfe, self.color);
+                self.buffer.chars[self.current_row][self.current_col] = Screen_char::new(0xfe, self.color);
                 self.update_cursor();
             }
         }
@@ -75,7 +76,25 @@ impl VGA_buffer {
     }
 
     fn insert_new_line(&mut self) {
+        
+    }
 
+    pub fn write_string(&mut self, message: &str) {
+        for char in message.bytes() {
+            self.write_byte(char);
+        }
     }
 }
 
+pub fn print_something(message: &str) {
+    //get color code
+    let color_code = VGA_color_scheme::new(Colors::Black, Colors::Cyan);
+    //get a VGA buffer instance
+    let mut buffer = VGA_buffer {
+        current_row: MAX_ROW-1,
+        current_col: 0,
+        color: color_code,
+        buffer: unsafe{ &mut *(0xB8000 as *mut buffer_memory) },        
+    };
+    buffer.write_string(message);   
+}
