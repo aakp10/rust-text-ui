@@ -9,10 +9,6 @@ fn panic(_info: &PanicInfo) -> ! {
     loop {}
 }
 
-#[repr(transparent)]
-struct buf {
-        chars: [[u8; 160]; 25] 
-}
 //avoid name mangling in case of the `_start` function name
 #[no_mangle]
 //foreign function interface; use C style calling convention
@@ -21,15 +17,14 @@ pub extern "C" fn _start() -> ! {
     //https://wiki.osdev.org/Text_UI
     let greeting = b"Text UI";
 
-    
-        let vga_buffer_ptr = unsafe {&mut *(0xB8000 as *mut buf)} ;
+
+        let vga_buffer_ptr = unsafe {&mut *(0xB8000 as *mut [[u8; 160]; 25])} ;
 
         for (index, byte) in greeting.iter().enumerate() { 
-            vga_buffer_ptr.chars[0][index*2] = *byte;
+            vga_buffer_ptr[0][index*2] = *byte;
             //foreground color
-            vga_buffer_ptr.chars[0][index*2 + 1] = 0x0e;
+            vga_buffer_ptr[0][index*2 + 1] = 0x0e;
         }
-    }
     //print_something("∑Text UI");
     loop {}
 }
