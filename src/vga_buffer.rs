@@ -1,4 +1,8 @@
 //https://wiki.osdev.org/Text_UI
+use volatile::Volatile;
+use lazy_static::lazy_static;
+use spin::Mutex;
+
 const MAX_ROW: usize = 25;
 const MAX_COL: usize = 80;
 
@@ -85,6 +89,15 @@ impl VGA_buffer {
             self.write_byte(char);
         }
     }
+}
+
+lazy_static!{
+    pub static ref VGA_WRITER: Mutex<VGA_buffer> = Mutex::new(VGA_buffer {
+        current_row: 0,
+        current_col: 0,
+        color: VGA_color_scheme::new(Colors::Black, Colors::Cyan),
+        buffer: unsafe{ &mut *(0xB8000 as *mut buffer_memory) },        
+    });
 }
 
 pub fn print_something(message: &str) {

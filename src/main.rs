@@ -17,7 +17,8 @@ fn panic(_info: &PanicInfo) -> ! {
 #[no_mangle]
 //foreign function interface; use C style calling convention
 pub extern "C" fn _start() -> ! {
-    /*let greeting = b"Text UI";
-    print_something("∑Text UI∑");
+    let greeting = "Text UI";
+    VGA_WRITER.lock().write_string(greeting);
+    //print_something("∑Text UI∑");
     loop {}
 }
