@@ -1,4 +1,7 @@
 //https://wiki.osdev.org/Text_UI
+const MAX_ROW: usize = 25;
+const MAX_COL: usize = 80;
+
 #[allow(dead_code)]
 
 #[derive(Copy, Clone)]
@@ -38,19 +41,17 @@ impl Screen_char {
     }
 }
 
-pub const MAX_ROW: usize = 25;
-pub const MAX_COL: usize = 80;
 // buffer 25 * 80 of [Screen_chars]
 #[repr(transparent)]
 pub struct buffer_memory{
-    chars: [[Screen_char; MAX_COL]; MAX_ROW],
+    chars: [[Volatile<Screen_char>; MAX_COL]; MAX_ROW],
 }
 
 pub struct VGA_buffer {
     current_row: usize,
     current_col: usize,
     color: VGA_color_scheme,
-    buffer: &'static mut buffer_memory,
+    buffer: &'static mut buffer_memory, //this can be replaced by a the array itself.
 }
 
 impl VGA_buffer {
@@ -58,11 +59,11 @@ impl VGA_buffer {
         match character {
             b'\n' => self.insert_new_line(),
             0x20..=0x7e => { //valid ascii character
-                self.buffer.chars[self.current_row][self.current_col] = Screen_char::new(character, self.color);
+                self.buffer.chars[self.current_row][self.current_col].write(Screen_char::new(character, self.color));
                 self.update_cursor();
             }
             _ => {
-                self.buffer.chars[self.current_row][self.current_col] = Screen_char::new(0xfe, self.color);
+                self.buffer.chars[self.current_row][self.current_col].write(Screen_char::new(0xfe, self.color));
                 self.update_cursor();
             }
         }
@@ -91,7 +92,7 @@ pub fn print_something(message: &str) {
     let color_code = VGA_color_scheme::new(Colors::Black, Colors::Cyan);
     //get a VGA buffer instance
     let mut buffer = VGA_buffer {
-        current_row: MAX_ROW-1,
+        current_row: 0,
         current_col: 0,
         color: color_code,
         buffer: unsafe{ &mut *(0xB8000 as *mut buffer_memory) },        
