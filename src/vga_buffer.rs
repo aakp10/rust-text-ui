@@ -74,14 +74,35 @@ impl VgaBuffer {
     }
 
     fn update_cursor(&mut self) {
-        self.current_col = (self.current_col + 1) % MAX_COL;
-        if self.current_col == 0 {
-            self.current_row += 1;
+        if self.current_col == MAX_COL {
+            self.insert_new_line();
         }
+        self.current_col = (self.current_col + 1) % MAX_COL;
+        
     }
 
     fn insert_new_line(&mut self) {
-        self.current_row += 1;
+        //enable scroll if all 25 rows have been used
+        if self.current_row == MAX_ROW-1 && self.current_col == MAX_ROW-1 {
+            self.scroll_down();
+        }
+        else {
+            self.current_row += 1;
+        }
+        self.current_col = 0;
+    }
+
+    fn scroll_down(&mut self) {
+        //shift every character up by one row
+        for row_index in 1..MAX_ROW {
+            for col_index in 0..MAX_COL {
+                self.buffer.chars[row_index-1][col_index].write(self.buffer.chars[row_index][col_index].read());
+            }
+        }
+        //clear the last row
+        for col_index in 0..MAX_COL {
+                self.buffer.chars[MAX_ROW-1][col_index].write(ScreenChar::new(0x20, self.color));
+        }
     }
 
     pub fn write_string(&mut self, message: &str) {
@@ -96,7 +117,7 @@ lazy_static!{
         current_row: 0,
         current_col: 0,
         color: VgaColorScheme::new(Colors::Black, Colors::Cyan),
-        buffer: unsafe{ &mut *(0xB8000 as *mut BufferMemory) },        
+        buffer: unsafe{ &mut *(0xB8000 as *mut BufferMemory) },    
     });
 }
 
