@@ -19,6 +19,5 @@ fn panic(_info: &PanicInfo) -> ! {
 pub extern "C" fn _start() -> ! {
     let greeting = "Text UI";
     VGA_WRITER.lock().write_string(greeting);
-    //print_something("∑Text UI∑");
     loop {}
 }
