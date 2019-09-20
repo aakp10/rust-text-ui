@@ -11,8 +11,6 @@ fn panic(_info: &PanicInfo) -> ! {
     loop {}
 }
 
-
-
 //avoid name mangling in case of the `_start` function name
 #[no_mangle]
 //foreign function interface; use C style calling convention
